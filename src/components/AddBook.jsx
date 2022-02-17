@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import BookDataService from "../services/book.service";
 
 import { Form, Button, InputGroup, FormControl, Alert } from "react-bootstrap";
@@ -11,6 +11,21 @@ const AddBook = () => {
   });
 
   const [message, setMessage] = useState({ error: false, msg: "" });
+  const [flag, setFlag] = useState(true);
+
+  useEffect(() => {
+    if (flag) {
+      setFormValue({
+        ...formValue,
+        status: "Available",
+      });
+    } else {
+      setFormValue({
+        ...formValue,
+        status: "Not available",
+      });
+    }
+  }, [flag]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,7 +42,7 @@ const AddBook = () => {
       status: formValue.status,
     };
 
-    console.log(newBook);
+    // console.log(newBook);
 
     try {
       await BookDataService.addBooks(newBook);
@@ -82,8 +97,20 @@ const AddBook = () => {
             }
           />
         </InputGroup>
+        <InputGroup className="mb-3">
+          <Form.Check
+            type="switch"
+            id="custom-switch"
+            label={formValue.status}
+            checked={flag}
+            onChange={({ target }) => {
+              setFlag(target.checked);
+              console.log(target.checked);
+            }}
+          />
+        </InputGroup>
         <Button variant="primary" type="submit">
-          Submit
+          Add Book
         </Button>
       </Form>
     </>
