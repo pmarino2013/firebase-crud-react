@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from "react";
 import BookDataService from "../services/book.service";
 
-import { Form, Button, InputGroup, FormControl, Alert } from "react-bootstrap";
+import { Alert } from "react-bootstrap";
+import FormBook from "./FormBook";
 
-const AddBook = () => {
+const AddBook = ({ id, setBookId, getBooks }) => {
+  //Para el formulario
   const [formValue, setFormValue] = useState({
     title: "",
     author: "",
     status: "Available",
   });
 
+  //mensaje cuando creo o actualizo libro
   const [message, setMessage] = useState({ error: false, msg: "" });
+
+  //bandera para el status del libro
   const [flag, setFlag] = useState(true);
 
+  //Cambio el status del libro si cambia la bandera
   useEffect(() => {
     if (flag) {
       setFormValue({
@@ -27,6 +33,42 @@ const AddBook = () => {
     }
   }, [flag]);
 
+  //Ejecuto editHandle si cambia el valor de id
+  useEffect(() => {
+    if (id) {
+      editHandler();
+    }
+  }, [id]);
+
+  //traigo los datos del libro según su id y los cargo en el formulario
+  const editHandler = async () => {
+    setMessage("");
+    try {
+      const datosEditar = await BookDataService.getBook(id);
+      console.log(datosEditar.data());
+      setFormValue({
+        title: datosEditar.data().title,
+        author: datosEditar.data().author,
+        status: datosEditar.data().status,
+      });
+    } catch (error) {
+      setMessage({ error: true, msg: error.message });
+    }
+  };
+
+  //Función que limpia el formulario e inicializa los estados
+  const clearForm = () => {
+    setFormValue({
+      title: "",
+      author: "",
+      status: "Available",
+    });
+    setFlag(true);
+    setBookId("");
+    setMessage("");
+  };
+
+  //Función para guardar datos creados o actualizados
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -45,8 +87,16 @@ const AddBook = () => {
     // console.log(newBook);
 
     try {
-      await BookDataService.addBooks(newBook);
-      setMessage({ error: false, msg: "New Book added" });
+      if (id) {
+        await BookDataService.updateBook(id, formValue);
+        setBookId("");
+        setMessage({ error: false, msg: "Updated Successfully" });
+        getBooks();
+      } else {
+        await BookDataService.addBooks(newBook);
+        setMessage({ error: false, msg: "New Book added" });
+        getBooks();
+      }
     } catch (error) {
       setMessage({ error: true, msg: error.message });
     }
@@ -57,6 +107,7 @@ const AddBook = () => {
       author: "",
     });
   };
+
   return (
     <>
       {message?.msg && (
@@ -68,8 +119,15 @@ const AddBook = () => {
           {message?.msg}
         </Alert>
       )}
-
-      <Form onSubmit={handleSubmit}>
+      <FormBook
+        handleSubmit={handleSubmit}
+        formValue={formValue}
+        setFormValue={setFormValue}
+        flag={flag}
+        setFlag={setFlag}
+        clearForm={clearForm}
+      />
+      {/* <Form onSubmit={handleSubmit}>
         <InputGroup className="mb-3">
           <InputGroup.Text id="basic-addon1">A</InputGroup.Text>
           <FormControl
@@ -105,14 +163,21 @@ const AddBook = () => {
             checked={flag}
             onChange={({ target }) => {
               setFlag(target.checked);
-              console.log(target.checked);
             }}
           />
         </InputGroup>
-        <Button variant="primary" type="submit">
-          Add Book
+        <Button
+          className="me-2"
+          variant="secondary"
+          onClick={clearForm}
+          type="button"
+        >
+          Clear
         </Button>
-      </Form>
+        <Button variant="primary" type="submit">
+          Add | Update
+        </Button>
+      </Form> */}
     </>
   );
 };
